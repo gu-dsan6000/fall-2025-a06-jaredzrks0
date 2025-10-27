@@ -1,0 +1,10 @@
+INFO,17/06/09 17:54:22 INFO storage.BlockManager: Found block rdd_2616_20 locally
+INFO,"17/03/23 14:51:26 INFO BlockManagerInfo: Added broadcast_6_piece1 in memory on mesos-slave-11:47005 (size: 4.0 MB, free: 13.9 GB)"
+INFO,17/06/09 16:58:12 INFO executor.Executor: Finished task 28.0 in stage 1675.0 (TID 71507). 2076 bytes result sent to driver
+INFO,17/06/08 21:09:56 INFO executor.Executor: Running task 2.0 in stage 14252.0 (TID 570121)
+"",Update row: 20284
+"",Update row: 238665
+"",Update row: 254050
+INFO,"17/06/09 12:36:20 INFO storage.MemoryStore: Block broadcast_9471_piece0 stored as bytes in memory (estimated size 5.8 KB, free 6.6 MB)"
+INFO,17/06/08 16:45:09 INFO output.FileOutputCommitter: Saved output of task 'attempt_201706081638_1933_m_000039_77359' to hdfs://10.10.34.11:9000/pjhe/test/43/_temporary/0/task_201706081638_1933_m_000039
+INFO,"17/04/13 22:19:58 INFO BlockManagerInfo: Added broadcast_5_piece303 in memory on mesos-slave-07:37429 (size: 4.0 MB, free: 13.1 GB)"
