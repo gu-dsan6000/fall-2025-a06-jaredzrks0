@@ -3,7 +3,8 @@ from pyspark.sql.functions import regexp_extract, col, rand, unix_timestamp
 import os
 import argparse
 from pyspark.sql.functions import to_timestamp, input_file_name, min, max, countDistinct
-
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 
@@ -62,8 +63,8 @@ hadoop_conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.DefaultAW
 hadoop_conf.set("fs.s3a.impl","org.apache.hadoop.fs.s3a.S3AFileSystem")
 hadoop_conf.set("fs.s3a.connection.maximum","100")
 
-#logs_df = spark.read.text("data/sample/application_*/*.log")
-logs_df = spark.read.text("s3a://jz982-assignment-spark-cluster-logs/data/*/*.log")
+logs_df = spark.read.text("data/sample/application_*/*.log")
+#logs_df = spark.read.text("s3a://jz982-assignment-spark-cluster-logs/data/*/*.log")
 
 parsed_df = logs_df.select(
     regexp_extract('value', r'^(\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2})', 1).alias('timestamp'),
@@ -98,15 +99,15 @@ df = df.withColumn('app_number',
 )
 
 df = df.withColumn(
-    'container_number',
-    regexp_extract('container_id', r'container_(\d+)_\d+_\d+_\d+', 1)
+    'cluster_number',
+    regexp_extract('cluster_id', r'container_(\d+)_\d+_\d+_\d+', 1)
 )
 
 df.write.mode('overwrite').csv("data/output/problem2_timeline.csv")
 
 
 ## PART 2 ##
-cluster_summary = df.groupBy('cluster_id').agg(
+cluster_summary = df.groupBy('cluster_number').agg(
     countDistinct('application_id').alias('num_applications'),
     min('start_time').alias('cluster_first_app'),
     max('end_time').alias('cluster_last_app')
@@ -133,9 +134,57 @@ with open(path, "w") as f:
     f.write(f"Average applications per cluster: {apps_per_cluster:.2f}\n\n")
     f.write("Most heavily used clusters:\n")
     for row in top_clusters:
-        cluster = row['cluster_id']
+        cluster = row['cluster_number']
         num = row['num_applications']
         f.write(f"  Cluster {cluster}: {num} applications\n")
+
+# VIZ
+chart_path = "data/output/problem2_bar_chart.png"
+
+cluster_pandas = (cluster_summary.select('cluster_number', 'num_applications')
+                                 .orderBy(col('num_applications').desc())
+                                 .toPandas())
+
+
+labels = cluster_pandas['cluster_number'].astype(str).tolist()
+values = cluster_pandas['num_applications'].astype(int).tolist()
+n = len(values)
+
+
+fig, ax = plt.subplots(figsize=(8,4))
+bars = ax.bar(range(n), values)
+
+ax.set_xticks(range(n))
+ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=8)
+ax.set_ylabel('Number of applications')
+ax.set_title('Number of applications per cluster')
+
+for bar in bars:
+    h = bar.get_height()
+    ax.text(bar.get_x() + bar.get_width() / 2, h, str(int(h)), ha='center', va='bottom', fontsize=8)
+
+plt.tight_layout()
+plt.savefig(chart_path, dpi=150)
+plt.close()
+
+# Plot 2
+path = 'data/output/problem2_statsproblem2_density_plot.png'
+top = cluster_summary.orderBy(col("num_applications").desc()).limit(1).collect()
+
+top_cluster = top[0]["cluster_number"]
+durations_pd = (df.filter(col("cluster_number") == top_cluster)
+                    .withColumn("duration_sec", unix_timestamp("end_time") - unix_timestamp("start_time"))
+                    .select("duration_sec")
+                    .toPandas())
+
+fig, ax = plt.subplots(figsize=(8, 4))
+sns.histplot(durations_pd["duration_sec"], kde=True, log_scale=True, ax=ax)
+ax.set_xlabel("Duration (s)")
+ax.set_ylabel("Density")
+ax.set_title(f"Job duration distribution for cluster {top_cluster} (n={len(durations_pd)})")
+plt.tight_layout()
+plt.savefig(path, dpi=150)
+plt.close()
 
 
 
