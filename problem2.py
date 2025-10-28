@@ -63,8 +63,8 @@ hadoop_conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.DefaultAW
 hadoop_conf.set("fs.s3a.impl","org.apache.hadoop.fs.s3a.S3AFileSystem")
 hadoop_conf.set("fs.s3a.connection.maximum","100")
 
-#logs_df = spark.read.text("data/sample/application_*/*.log")
-logs_df = spark.read.text("s3a://jz982-assignment-spark-cluster-logs/data/*/*.log")
+logs_df = spark.read.text("data/sample/application_*/*.log")
+#logs_df = spark.read.text("s3a://jz982-assignment-spark-cluster-logs/data/*/*.log")
 
 parsed_df = logs_df.select(
     regexp_extract('value', r'^(\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2})', 1).alias('timestamp'),
